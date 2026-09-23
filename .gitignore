@@ -1,0 +1,20 @@
+# 构建 / 发布产物
+dist/
+build/
+*.egg-info/
+src/*.egg-info/
+.DS_Store
+
+# 密文与本地环境
+*.enc
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# 密钥与本地配置（切勿提交）
+.pypirc
+.env
+*.pem

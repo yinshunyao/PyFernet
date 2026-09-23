@@ -1,0 +1,2 @@
+# 本项目零第三方运行时依赖；开发/发布工具见 docs/PUBLISH.md
+# pip install build twine

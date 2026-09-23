@@ -1,0 +1,59 @@
+[build-system]
+# setuptools>=64 才有 PEP 660 editable；旧 pip 会回退读同目录 setup.py
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyfernet-payload"
+version = "0.2.4"
+description = "Encrypt a Python source directory into one .enc file and run it from memory (Fernet AES, stdlib-only)."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [
+  { name = "shunyaoyin" },
+]
+keywords = [
+  "fernet",
+  "aes",
+  "encrypt",
+  "source-protection",
+  "in-memory",
+  "training",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security :: Cryptography",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+# 零运行时第三方依赖（纯标准库）
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/yinshunyao/PyFernet"
+Issues = "https://github.com/yinshunyao/PyFernet/issues"
+Documentation = "https://github.com/yinshunyao/PyFernet#readme"
+
+[project.scripts]
+pyfernet = "pyfernet.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pyfernet*"]
+
+[tool.setuptools.package-data]
+pyfernet = ["py.typed"]
