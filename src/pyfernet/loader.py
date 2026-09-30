@@ -80,11 +80,52 @@ def list_payload(payload_path: str | Path, password: str) -> tuple[str, list[str
     return entry, sorted(mapping.keys())
 
 
-def run_entry(zip_bytes: bytes, argv: list[str] | None = None) -> None:
+def normalize_entry_rel(entry_point: str) -> str:
+    """规范化包内相对入口路径；拒绝绝对路径与 ``..``。"""
+    text = str(entry_point or "").strip().replace("\\", "/")
+    if not text:
+        raise ValueError("入口路径不能为空")
+    if text.startswith("/") or Path(text).is_absolute():
+        raise ValueError(f"入口须为密文包内相对路径: {entry_point}")
+    parts = Path(text).parts
+    if ".." in parts:
+        raise ValueError(f"入口路径不得包含 '..': {entry_point}")
+    rel = Path(*parts).as_posix() if parts else text
+    if rel.startswith("./"):
+        rel = rel[2:]
+    return rel
+
+
+def resolve_entry_rel(
+    mapping: dict[str, bytes],
+    default_entry: str,
+    entry_point: str | None = None,
+) -> str:
+    """选择实际执行入口：``entry_point`` 覆盖 manifest 默认值。"""
+    if entry_point is None or not str(entry_point).strip():
+        chosen = str(default_entry).replace("\\", "/")
+    else:
+        chosen = normalize_entry_rel(entry_point)
+    if chosen not in mapping:
+        py_files = [k for k in sorted(mapping) if k.endswith(".py")]
+        sample = ", ".join(py_files[:12])
+        more = f" …共 {len(py_files)} 个 .py" if len(py_files) > 12 else ""
+        raise RuntimeError(
+            f"入口不在密文包内: {chosen}\n"
+            f"  可用 .py 示例: {sample}{more}"
+        )
+    return chosen
+
+
+def run_entry(
+    zip_bytes: bytes,
+    argv: list[str] | None = None,
+    *,
+    entry_point: str | None = None,
+) -> None:
     _configure_stdio()
-    mapping, entry_rel = _zip_to_mapping(zip_bytes)
-    if entry_rel not in mapping:
-        raise RuntimeError(f"入口不在密文包内: {entry_rel}")
+    mapping, default_entry = _zip_to_mapping(zip_bytes)
+    entry_rel = resolve_entry_rel(mapping, default_entry, entry_point)
 
     root = _empty_root()
     vfs = PayloadVFS(root, mapping)
@@ -94,6 +135,8 @@ def run_entry(zip_bytes: bytes, argv: list[str] | None = None) -> None:
         entry = (root / entry_rel).resolve()
         if argv is not None:
             sys.argv = list(argv)
+        else:
+            sys.argv = [entry_rel]
 
         root_s = str(root)
         entry_dir = str(entry.parent)
@@ -155,19 +198,26 @@ def run_payload(
     payload_path: str | Path,
     password: str,
     argv: list[str] | None = None,
+    *,
+    entry_point: str | None = None,
 ) -> None:
-    """解密并执行密文包（库接口）。"""
+    """解密并执行密文包（库接口）。
+
+    ``entry_point`` 为包内相对路径时覆盖 manifest 默认入口；``None`` 用加密时的 ``-e``。
+    """
     path = Path(payload_path)
     if not path.is_file():
         raise FileNotFoundError(f"找不到密文包: {path}")
     zip_bytes = decrypt_payload(path, password)
-    run_entry(zip_bytes, argv=argv)
+    run_entry(zip_bytes, argv=argv, entry_point=entry_point)
 
 
 def main(
     payload_path: str,
     password: str | None = None,
     argv: list[str] | None = None,
+    *,
+    entry_point: str | None = None,
 ) -> None:
     path = Path(payload_path)
     if not path.is_file():
@@ -176,15 +226,21 @@ def main(
     if password is None:
         password = getpass.getpass("解密口令: ")
 
-    run_payload(path, password, argv=argv)
+    run_payload(path, password, argv=argv, entry_point=entry_point)
 
 
 def _ide_main() -> None:
     PAYLOAD_PATH = "dist/train_payload.enc"
     PASSWORD = None
+    ENTRY_POINT = None  # None=manifest 默认；或 "other_entry.py"
     TRAIN_ARGV = ["train.py"]
 
-    main(payload_path=PAYLOAD_PATH, password=PASSWORD, argv=TRAIN_ARGV)
+    main(
+        payload_path=PAYLOAD_PATH,
+        password=PASSWORD,
+        argv=TRAIN_ARGV,
+        entry_point=ENTRY_POINT,
+    )
 
 
 if __name__ == "__main__":

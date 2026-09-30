@@ -30,19 +30,42 @@ python3 -m pip install -e .
 ### Encrypt
 
 ```bash
+# default: interactive passphrase prompt
 pyfernet encrypt ./my_train -o train_payload.enc -e train.py
-# passphrase via prompt; or:
+
+# non-interactive: environment variable (recommended)
 export PYFERNET_PASSWORD='your-secret'
 pyfernet encrypt ./my_train -o train_payload.enc -e train.py --password-env PYFERNET_PASSWORD
+
+# non-interactive: CLI flag (shows in process list / shell history; temporary use only)
+pyfernet encrypt ./my_train -o train_payload.enc -e train.py -p 'your-secret'
 ```
 
 ### Run
 
 ```bash
+# default: interactive passphrase prompt (runs encrypt-time -e)
 pyfernet run train_payload.enc
-# forward args to the training entry (after --):
+
+# non-interactive: environment variable (recommended)
+export PYFERNET_PASSWORD='your-secret'
+pyfernet run train_payload.enc --password-env PYFERNET_PASSWORD
+
+# non-interactive: CLI flag (not recommended; passphrase is visible)
+pyfernet run train_payload.enc -p 'your-secret'
+
+# override entry (must exist inside the package; no re-encrypt needed)
+pyfernet run train_payload.enc -e other_entry.py
+pyfernet run train_payload.enc --entry export_core.py
+
+# forward args to the chosen entry (after --):
 pyfernet run train_payload.enc -- --epochs 50 --batch 8
+pyfernet run train_payload.enc -e test_core.py -- --help
 ```
+
+`run -e` overrides the manifest default entry. The path is relative to the encrypted source root (same style as `encrypt -e`). Absolute paths and `..` are rejected. Old `.enc` files work after upgrading `pyfernet-payload` on the client.
+
+Passphrase priority: `-p` / `--password` > `--password-env` / `PYFERNET_PASSWORD` > interactive prompt.
 
 Equivalent:
 
@@ -81,6 +104,13 @@ from pyfernet import encrypt_directory, run_payload
 
 encrypt_directory("examples/demo_train", "dist/train_payload.enc", "train.py", "secret")
 run_payload("dist/train_payload.enc", "secret", argv=["train.py", "--epochs", "1"])
+# override entry without re-encrypting:
+run_payload(
+    "dist/train_payload.enc",
+    "secret",
+    argv=["other_entry.py"],
+    entry_point="other_entry.py",
+)
 ```
 
 ## Payload format

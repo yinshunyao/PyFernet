@@ -36,8 +36,8 @@ python -m build
 
 产物应在 `dist/`：
 
-- `pyfernet_payload-0.1.0-py3-none-any.whl`
-- `pyfernet_payload-0.1.0.tar.gz`
+- `pyfernet_payload-0.2.5-py3-none-any.whl`
+- `pyfernet_payload-0.2.5.tar.gz`
 
 ## 上传 TestPyPI（推荐先测）
 

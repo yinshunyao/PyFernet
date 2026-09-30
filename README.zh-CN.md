@@ -30,19 +30,42 @@ python3 -m pip install -e .
 ### 加密
 
 ```bash
+# 默认：交互输入口令
 pyfernet encrypt ./my_train -o train_payload.enc -e train.py
-# 口令交互输入；或：
+
+# 非交互：环境变量（推荐）
 export PYFERNET_PASSWORD='your-secret'
 pyfernet encrypt ./my_train -o train_payload.enc -e train.py --password-env PYFERNET_PASSWORD
+
+# 非交互：命令行直传（会进进程列表 / shell 历史，仅临时用）
+pyfernet encrypt ./my_train -o train_payload.enc -e train.py -p 'your-secret'
 ```
 
 ### 运行
 
 ```bash
+# 默认：交互输入口令（跑加密时的 -e）
 pyfernet run train_payload.enc
-# 传参给训练脚本（-- 之后原样转发）：
+
+# 非交互：环境变量（推荐）
+export PYFERNET_PASSWORD='your-secret'
+pyfernet run train_payload.enc --password-env PYFERNET_PASSWORD
+
+# 非交互：命令行直传（不推荐，口令可见）
+pyfernet run train_payload.enc -p 'your-secret'
+
+# 覆盖入口（须在密文包内；不必重新 encrypt）
+pyfernet run train_payload.enc -e other_entry.py
+pyfernet run train_payload.enc --entry export_core.py
+
+# 传参给所选入口（-- 之后原样转发）：
 pyfernet run train_payload.enc -- --epochs 50 --batch 8
+pyfernet run train_payload.enc -e test_core.py -- --help
 ```
+
+`run -e` 覆盖 manifest 默认入口。路径相对加密源根（写法同 `encrypt -e`）。禁止绝对路径与 `..`。客户机升级 `pyfernet-payload` 后，旧 `.enc` 也可直接覆盖入口。
+
+口令优先级：`-p` / `--password` > `--password-env` / `PYFERNET_PASSWORD` > 交互输入。
 
 等价：
 
@@ -81,6 +104,13 @@ from pyfernet import encrypt_directory, run_payload
 
 encrypt_directory("examples/demo_train", "dist/train_payload.enc", "train.py", "secret")
 run_payload("dist/train_payload.enc", "secret", argv=["train.py", "--epochs", "1"])
+# 不重新加密即可换入口：
+run_payload(
+    "dist/train_payload.enc",
+    "secret",
+    argv=["other_entry.py"],
+    entry_point="other_entry.py",
+)
 ```
 
 ## 密文格式

@@ -84,9 +84,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_run = sub.add_parser(
         "run",
         help="解密密文包并在内存中执行",
-        epilog="传给训练脚本的参数写在 -- 之后，例如: pyfernet run a.enc -- --epochs 10",
+        epilog=(
+            "覆盖入口: pyfernet run a.enc -e export_core.py\n"
+            "传给脚本的参数写在 -- 之后: pyfernet run a.enc -- --epochs 10"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p_run.add_argument("payload", type=Path, help="密文包路径（.enc）")
+    p_run.add_argument(
+        "-e",
+        "--entry",
+        default=None,
+        metavar="REL",
+        help="覆盖运行入口（密文包内相对路径）；默认用加密时的 -e",
+    )
     p_run.add_argument(
         "-p",
         "--password",
@@ -132,9 +143,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         password = _password_from_args(args.password, args.password_env)
-        entry_name = Path(args.payload).name
-        train_argv = [entry_name, *script_args]
-        run_main(payload_path=str(args.payload), password=password, argv=train_argv)
+        entry_override = str(args.entry).strip() if args.entry else None
+        argv0 = entry_override or Path(args.payload).name
+        train_argv = [argv0, *script_args]
+        run_main(
+            payload_path=str(args.payload),
+            password=password,
+            argv=train_argv,
+            entry_point=entry_override,
+        )
         return 0
 
     if args.command == "list":

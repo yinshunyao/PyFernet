@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyfernet-payload"
-version = "0.2.4"
+version = "0.2.5"
 description = "Encrypt a Python source directory into one .enc file and run it from memory (Fernet AES, stdlib-only)."
 readme = "README.md"
 license = "MIT"

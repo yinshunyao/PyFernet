@@ -35,8 +35,8 @@ python -m build
 
 Artifacts under `dist/`:
 
-- `pyfernet_payload-0.1.0-py3-none-any.whl`
-- `pyfernet_payload-0.1.0.tar.gz`
+- `pyfernet_payload-0.2.5-py3-none-any.whl`
+- `pyfernet_payload-0.2.5.tar.gz`
 
 ## Upload to TestPyPI (recommended first)
 
